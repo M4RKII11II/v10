@@ -91,8 +91,7 @@ namespace all_tests
 		TEST_METHOD(test_04b)
 		{
 			std::vector<std::string> v{ "V", "S", "I", "T", "E", "!" };
-			auto res = std::accumulate(v.begin(), v.end(), std::string("GO "), [](const std::string& acc, const std::string& s) {
-				return acc + s;});
+			auto res = std::accumulate(v.begin(), v.end(), std::string("GO "), std::plus<std::string>());
 			Assert::AreEqual("GO VSITE!", res.c_str());
 		}
 
@@ -117,8 +116,7 @@ namespace all_tests
 		TEST_METHOD(test_05b)
 		{
 			std::vector<double> v{ 1.5, 8, -11.23, 0, 1e10, 1e10, 1e10, 0, 99 };
-			auto number_of_invalid = std::count_if(v.begin(), v.end(), [](double x) {
-				return x == 1e10;});
+			auto number_of_invalid = std::count(v.begin(), v.end(),1e10);
 			Assert::AreEqual(3ll, number_of_invalid);
 		}
 
@@ -152,8 +150,7 @@ namespace all_tests
 		TEST_METHOD(test_07a)
 		{
 			std::vector<double> v{ 1e10, 8, -11.23, 0, 1e10, 1e10, 1e10, 0, 99 };
-			std::transform(v.begin(), v.end(), v.begin(), [](double value) {
-				return (value == 1e10) ? -1. : value;});
+			std::replace(v.begin(), v.end(),1e10,-1.);
 			Assert::AreEqual(-1., v[0]);
 			Assert::AreEqual(-1., v[4]);
 			Assert::AreEqual(-1., v[6]);
@@ -184,11 +181,12 @@ namespace all_tests
 			Assert::AreEqual(8., v[0]);
 			Assert::AreEqual(99., v[4]);
 		}
-
+		
 		TEST_METHOD(test_08b)
 		{
+			
 			std::string s("poliuretan");
-			s.erase(std::remove_if(s.begin(), s.end(), [](char c) {
+			auto is_vowel = [](char c) {
 				switch (std::tolower(c)) {
 				case 'a':
 				case 'e':
@@ -198,8 +196,10 @@ namespace all_tests
 					return true;
 				default:
 					return false;
-				}}), s.end());
-			Assert::AreEqual("plrtn", s.c_str());
+				}
+				};
+			s.erase(std::remove_if(s.begin(), s.end(), is_vowel), s.end());
+			Assert::AreEqual("plrtn", s.c_str());	
 		}
 
 		TEST_METHOD(test_09)
@@ -241,12 +241,13 @@ namespace all_tests
 		TEST_METHOD(test_12)
 		{
 			std::vector<int> atp_points{ 8445, 7480, 6220, 5300, 5285 };
-			auto smallest_difference = std::numeric_limits<int>::max();
-			for (size_t i = 1; i < atp_points.size(); ++i) {
-				int difference = std::abs(atp_points[i] - atp_points[i - 1]);
-				smallest_difference = std::min(smallest_difference, difference);
-			}
-			Assert::AreEqual(15, smallest_difference);
+			std::vector<int> diff(atp_points.size());
+			std::adjacent_difference(atp_points.begin(), atp_points.end(), diff.begin());
+			auto smallest_difference = *std::min_element(diff.begin() + 1, diff.end(), [](int a, int b) {
+				if (a <= 0) return false;
+				if (b <= 0) return true; 
+				return a < b;
+				});
 		}
 	};
 }
